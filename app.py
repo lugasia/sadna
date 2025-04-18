@@ -121,33 +121,41 @@ st.markdown("""
         width: 100%;
         max-width: 800px;
         margin: 0 auto;
+        background: white;
     }
 
     .view-image-container {
         width: 100%;
         position: relative;
-    }
-
-    .view-image-container::after {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        pointer-events: none;
-        background: linear-gradient(45deg, rgba(255,255,255,0.1) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.1) 75%);
-        background-size: 2px 2px;
+        margin: 0;
+        padding: 0;
+        line-height: 0;
     }
 
     .view-image-container img {
         width: 100%;
         height: auto;
         display: block;
+        margin: 0;
+        padding: 0;
         transform: translate3d(0,0,0);
         backface-visibility: hidden;
-        perspective: 1000px;
-        filter: blur(0.000001px);
+    }
+
+    /* Remove any potential spacing from Streamlit elements in view mode */
+    .view-grid .element-container {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .view-grid .stImage {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Remove the gradient overlay we added earlier */
+    .view-image-container::after {
+        display: none;
     }
 
     @media (max-width: 768px) {
