@@ -35,8 +35,12 @@ ENV/
 .streamlit/
 
 # Project specific
-album/
 uploaded_images/
+
+# Allow all files in album directory
+!album/
+!album/**/*
+
 *.jpg
 *.jpeg
 *.png

@@ -104,11 +104,8 @@ def pil_to_bytes(pil_image):
 
 def get_share_url():
     """Generate shareable URL for the album."""
-    # Use HTTPS for cloud deployment
-    if os.environ.get('STREAMLIT_CLOUD'):
-        base_url = "https://sadna.streamlit.app"
-    else:
-        base_url = f"http://localhost:{st.session_state.port}"
+    # Use the Streamlit Cloud URL if available, otherwise use localhost
+    base_url = "https://lgvqgdba26dczmfvmh9qmd.streamlit.app"
     return f"{base_url}/?album_id={st.session_state.album_id}"
 
 # Load saved rotation data
@@ -281,7 +278,7 @@ if st.session_state.images:
                             if current_rotation:
                                 image = image.rotate(-current_rotation, expand=True)
                             
-                            st.image(image, use_column_width=True)
+                            st.image(image, use_container_width=True)
                             
                             if st.session_state.view_mode == 'edit':
                                 col1, col2 = st.columns(2)
