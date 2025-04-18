@@ -32,13 +32,13 @@ st.markdown("""
     
     /* Image styling */
     .stImage {
-        margin: 20px 0;
+        margin: 30px 0;
         transition: all 0.3s ease;
     }
     
     .stImage > img {
-        border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         transition: transform 0.3s ease;
     }
     
@@ -50,9 +50,14 @@ st.markdown("""
         font-size: 2em;
         margin: 20px 0;
         text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        position: sticky;
+        top: 0;
+        background: white;
+        padding: 10px;
+        z-index: 1000;
     }
     
-    /* Navigation buttons */
+    /* Button styling */
     .stButton button {
         background: #2c3e50;
         color: white;
@@ -77,15 +82,6 @@ st.markdown("""
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     
-    /* Progress indicator */
-    .progress-text {
-        text-align: center;
-        font-family: 'Arial', sans-serif;
-        color: #2c3e50;
-        margin: 10px 0;
-        font-size: 1.2em;
-    }
-    
     /* Edit mode controls */
     .edit-controls {
         display: flex;
@@ -108,6 +104,10 @@ st.markdown("""
             padding: 10px 20px;
             font-size: 14px;
         }
+        
+        .stImage {
+            margin: 20px 0;
+        }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -115,8 +115,6 @@ st.markdown("""
 # Initialize session state
 if 'images' not in st.session_state:
     st.session_state.images = []
-if 'current_image' not in st.session_state:
-    st.session_state.current_image = 0
 if 'upload_dir' not in st.session_state:
     st.session_state.upload_dir = 'album'
 if 'album_id' not in st.session_state:
@@ -201,60 +199,44 @@ if st.session_state.view_mode == 'edit':
 # Display images
 st.session_state.images = load_images_from_album()
 if st.session_state.images:
-    total_images = len(st.session_state.images)
-    
-    # Navigation controls at the top
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col1:
-        if st.session_state.current_image > 0:
-            if st.button("⬅️ הקודם"):
-                st.session_state.current_image -= 1
-                st.rerun()
-    
-    with col2:
-        st.markdown(f"<div class='progress-text'>תמונה {st.session_state.current_image + 1} מתוך {total_images}</div>", unsafe_allow_html=True)
-    
-    with col3:
-        if st.session_state.current_image < total_images - 1:
-            if st.button("הבא ➡️"):
-                st.session_state.current_image += 1
-                st.rerun()
-    
-    # Display current image
-    try:
-        img_path = st.session_state.images[st.session_state.current_image]
-        current_rotation = st.session_state.image_rotations.get(img_path, 0)
-        image = Image.open(img_path)
-        if current_rotation:
-            image = image.rotate(-current_rotation, expand=True)
-        
-        # Calculate image dimensions for mobile
-        img_width, img_height = image.size
-        aspect_ratio = img_height / img_width
-        
-        # Adjust image size for mobile viewing
-        display_width = min(800, img_width)
-        display_height = int(display_width * aspect_ratio)
-        
-        # Resize image while maintaining aspect ratio
-        image = image.resize((display_width, display_height), Image.Resampling.LANCZOS)
-        
-        st.image(image, use_container_width=True)
-        
-        if st.session_state.view_mode == 'edit':
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("↺ סובב שמאלה"):
-                    st.session_state.image_rotations[img_path] = (current_rotation - 90) % 360
-                    save_rotation_data()
-                    st.rerun()
-            with col2:
-                if st.button("↻ סובב ימינה"):
-                    st.session_state.image_rotations[img_path] = (current_rotation + 90) % 360
-                    save_rotation_data()
-                    st.rerun()
-    except Exception as e:
-        st.error(f"שגיאה בטעינת התמונה: {str(e)}")
+    # Create a container for all images
+    with st.container():
+        for img_path in st.session_state.images:
+            try:
+                current_rotation = st.session_state.image_rotations.get(img_path, 0)
+                image = Image.open(img_path)
+                if current_rotation:
+                    image = image.rotate(-current_rotation, expand=True)
+                
+                # Calculate image dimensions for mobile
+                img_width, img_height = image.size
+                aspect_ratio = img_height / img_width
+                
+                # Adjust image size for mobile viewing
+                display_width = min(800, img_width)
+                display_height = int(display_width * aspect_ratio)
+                
+                # Resize image while maintaining aspect ratio
+                image = image.resize((display_width, display_height), Image.Resampling.LANCZOS)
+                
+                # Display image with padding
+                st.image(image, use_container_width=True)
+                
+                # Show rotation controls in edit mode
+                if st.session_state.view_mode == 'edit':
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        if st.button("↺ סובב שמאלה", key=f"left_{img_path}"):
+                            st.session_state.image_rotations[img_path] = (current_rotation - 90) % 360
+                            save_rotation_data()
+                            st.rerun()
+                    with col2:
+                        if st.button("↻ סובב ימינה", key=f"right_{img_path}"):
+                            st.session_state.image_rotations[img_path] = (current_rotation + 90) % 360
+                            save_rotation_data()
+                            st.rerun()
+            except Exception as e:
+                st.error(f"שגיאה בטעינת התמונה: {str(e)}")
     
     # Show sharing options only in edit mode
     if st.session_state.view_mode == 'edit':
@@ -279,7 +261,6 @@ if st.session_state.images:
         if st.button("מחק אלבום", type="primary"):
             shutil.rmtree(st.session_state.upload_dir)
             st.session_state.images = []
-            st.session_state.current_image = 0
             st.rerun()
 else:
     if st.session_state.view_mode == 'edit':
