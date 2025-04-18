@@ -23,6 +23,24 @@ st.set_page_config(
 # Custom CSS for mobile-friendly view
 st.markdown("""
 <style>
+    /* Prevent screen capture */
+    * {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+    }
+    
+    .stImage > img {
+        -webkit-user-drag: none;
+        -khtml-user-drag: none;
+        -moz-user-drag: none;
+        -o-user-drag: none;
+        user-drag: none;
+        pointer-events: none;
+    }
+    
     /* Mobile-friendly container */
     .mobile-container {
         max-width: 100%;
@@ -34,27 +52,38 @@ st.markdown("""
     .stImage {
         margin: 30px 0;
         transition: all 0.3s ease;
+        -webkit-tap-highlight-color: transparent;
     }
     
     .stImage > img {
         border-radius: 15px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         transition: transform 0.3s ease;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
     }
     
     /* Title styling */
-    h1 {
-        text-align: center;
-        color: #2c3e50;
-        font-family: 'Arial', sans-serif;
-        font-size: 2em;
-        margin: 20px 0;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-        position: sticky;
+    .sticky-header {
+        position: fixed;
         top: 0;
+        left: 0;
+        right: 0;
         background: white;
         padding: 10px;
         z-index: 1000;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        text-align: center;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+    
+    .header-spacer {
+        height: 80px;
     }
     
     /* Button styling */
@@ -70,6 +99,18 @@ st.markdown("""
         box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         margin: 5px;
         width: 100%;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+    
+    .delete-button {
+        background: #e74c3c !important;
+    }
+    
+    .delete-button:hover {
+        background: #c0392b !important;
     }
     
     .stButton button:hover {
@@ -90,13 +131,26 @@ st.markdown("""
         margin: 10px 0;
     }
     
+    /* Image container */
+    .image-container {
+        position: relative;
+        margin: 20px 0;
+        padding: 10px;
+        border-radius: 15px;
+        background: white;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+    
     /* Responsive design */
     @media (max-width: 768px) {
         .mobile-container {
             padding: 5px;
         }
         
-        h1 {
+        .sticky-header h1 {
             font-size: 1.5em;
         }
         
@@ -107,6 +161,10 @@ st.markdown("""
         
         .stImage {
             margin: 20px 0;
+        }
+        
+        .header-spacer {
+            height: 60px;
         }
     }
 </style>
@@ -168,20 +226,53 @@ def get_share_url():
     base_url = "https://lgvqgdba26dczmfvmh9qmd.streamlit.app"
     return f"{base_url}/?album_id={st.session_state.album_id}"
 
+def delete_image(img_path):
+    """Delete an image and its rotation data."""
+    try:
+        os.remove(img_path)
+        if img_path in st.session_state.image_rotations:
+            del st.session_state.image_rotations[img_path]
+            save_rotation_data()
+        return True
+    except Exception as e:
+        st.error(f"שגיאה במחיקת התמונה: {str(e)}")
+        return False
+
 # Load saved rotation data
 st.session_state.image_rotations = load_rotation_data()
 
-# Main app
-st.title("סדנת יצירה 2025")
+# Sticky header
+st.markdown('<div class="sticky-header"><h1>סדנת יצירה 2025</h1></div>', unsafe_allow_html=True)
+st.markdown('<div class="header-spacer"></div>', unsafe_allow_html=True)
 
-# Toggle view mode if in edit mode
+# Show admin controls at the top if in edit mode
 if st.session_state.view_mode == 'edit':
-    if st.button("תצוגה מקדימה"):
-        st.session_state.view_mode = 'view'
-        st.rerun()
-
-# Show edit interface only in edit mode
-if st.session_state.view_mode == 'edit':
+    # Sharing options at the top
+    st.subheader("שיתוף אלבום")
+    share_url = get_share_url()
+    st.write("קישור לשיתוף:", share_url)
+    qr_code = qrcode.make(share_url)
+    qr_bytes = BytesIO()
+    qr_code.save(qr_bytes, format='PNG')
+    qr_bytes = qr_bytes.getvalue()
+    
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        st.image(qr_bytes, width=200)
+    with col2:
+        st.download_button(
+            label="הורד קוד QR",
+            data=qr_bytes,
+            file_name="album_qr.png",
+            mime="image/png"
+        )
+        if st.button("תצוגה מקדימה"):
+            st.session_state.view_mode = 'view'
+            st.rerun()
+    
+    st.markdown("---")
+    
+    # Upload interface
     st.subheader("העלאת תמונות")
     uploaded_files = st.file_uploader("בחר תמונות להעלאה", type=['png', 'jpg', 'jpeg', 'gif', 'bmp', 'heic'], accept_multiple_files=True)
 
@@ -195,6 +286,8 @@ if st.session_state.view_mode == 'edit':
                 save_rotation_data()
                 st.session_state.images = load_images_from_album()
                 st.success(f"הועלו {len(uploaded_files)} תמונות בהצלחה!")
+    
+    st.markdown("---")
 
 # Display images
 st.session_state.images = load_images_from_album()
@@ -219,12 +312,15 @@ if st.session_state.images:
                 # Resize image while maintaining aspect ratio
                 image = image.resize((display_width, display_height), Image.Resampling.LANCZOS)
                 
+                # Create image container
+                st.markdown('<div class="image-container">', unsafe_allow_html=True)
+                
                 # Display image with padding
                 st.image(image, use_container_width=True)
                 
-                # Show rotation controls in edit mode
+                # Show controls in edit mode
                 if st.session_state.view_mode == 'edit':
-                    col1, col2 = st.columns(2)
+                    col1, col2, col3 = st.columns(3)
                     with col1:
                         if st.button("↺ סובב שמאלה", key=f"left_{img_path}"):
                             st.session_state.image_rotations[img_path] = (current_rotation - 90) % 360
@@ -235,30 +331,19 @@ if st.session_state.images:
                             st.session_state.image_rotations[img_path] = (current_rotation + 90) % 360
                             save_rotation_data()
                             st.rerun()
+                    with col3:
+                        if st.button("🗑️ מחק תמונה", key=f"delete_{img_path}", type="primary"):
+                            if delete_image(img_path):
+                                st.rerun()
+                
+                st.markdown('</div>', unsafe_allow_html=True)
             except Exception as e:
                 st.error(f"שגיאה בטעינת התמונה: {str(e)}")
     
-    # Show sharing options only in edit mode
+    # Delete album button at the bottom of edit mode
     if st.session_state.view_mode == 'edit':
         st.markdown("---")
-        st.subheader("שיתוף אלבום")
-        share_url = get_share_url()
-        st.write("קישור לשיתוף:", share_url)
-        qr_code = qrcode.make(share_url)
-        qr_bytes = BytesIO()
-        qr_code.save(qr_bytes, format='PNG')
-        qr_bytes = qr_bytes.getvalue()
-        st.image(qr_bytes, width=200)
-        
-        st.download_button(
-            label="הורד קוד QR",
-            data=qr_bytes,
-            file_name="album_qr.png",
-            mime="image/png"
-        )
-        
-        st.markdown("---")
-        if st.button("מחק אלבום", type="primary"):
+        if st.button("מחק את כל האלבום", type="primary"):
             shutil.rmtree(st.session_state.upload_dir)
             st.session_state.images = []
             st.rerun()
