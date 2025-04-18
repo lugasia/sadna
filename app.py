@@ -316,10 +316,29 @@ def get_share_url():
 
 def delete_image(img_path):
     try:
-        os.remove(img_path)
+        # Remove from rotations
         if img_path in st.session_state.image_rotations:
             del st.session_state.image_rotations[img_path]
             save_rotation_data()
+        
+        # Remove from order
+        if img_path in st.session_state.image_order:
+            del st.session_state.image_order[img_path]
+            save_order_data()
+        
+        # Remove file from disk
+        if os.path.exists(img_path):
+            os.remove(img_path)
+        
+        # Remove from git and push changes
+        os.system(f'git rm "{img_path}"')
+        os.system('git commit -m "Remove image file"')
+        os.system('git push')
+        
+        # Remove from session state
+        if img_path in st.session_state.images:
+            st.session_state.images.remove(img_path)
+        
         return True
     except Exception as e:
         st.error(f"שגיאה במחיקת התמונה: {str(e)}")
