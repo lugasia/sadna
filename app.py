@@ -26,7 +26,7 @@ if 'images' not in st.session_state:
 if 'current_page' not in st.session_state:
     st.session_state.current_page = 0
 if 'images_per_page' not in st.session_state:
-    st.session_state.images_per_page = 4  # Changed to 4 images per page
+    st.session_state.images_per_page = 4
 if 'upload_dir' not in st.session_state:
     st.session_state.upload_dir = 'album'
 if 'album_id' not in st.session_state:
@@ -38,7 +38,8 @@ if 'view_mode' not in st.session_state:
 if 'transition' not in st.session_state:
     st.session_state.transition = False
 if 'port' not in st.session_state:
-    st.session_state.port = 8514
+    # Get the port from the environment or use default
+    st.session_state.port = int(os.environ.get('PORT', 8501))
 
 # Get album_id from URL parameters
 params = st.query_params
@@ -47,10 +48,9 @@ if 'album_id' in params:
     st.session_state.view_mode = 'view'
 
 # Create upload directory if it doesn't exist
-if not os.path.exists(st.session_state.upload_dir):
-    os.makedirs(st.session_state.upload_dir)
+os.makedirs(st.session_state.upload_dir, exist_ok=True)
 
-# No need for album-specific directory since we're using @album
+# No need for album-specific directory since we're using a fixed directory
 album_dir = st.session_state.upload_dir
 
 # Path for storing rotation data
@@ -104,9 +104,11 @@ def pil_to_bytes(pil_image):
 
 def get_share_url():
     """Generate shareable URL for the album."""
-    # Use the port from session state
-    base_url = f"http://localhost:{st.session_state.port}"
-    # Add album_id parameter
+    # Use HTTPS for cloud deployment
+    if os.environ.get('STREAMLIT_CLOUD'):
+        base_url = "https://sadna.streamlit.app"
+    else:
+        base_url = f"http://localhost:{st.session_state.port}"
     return f"{base_url}/?album_id={st.session_state.album_id}"
 
 # Load saved rotation data
