@@ -49,81 +49,79 @@ st.markdown("""
         margin-top: 4rem;
     }
 
-    /* Grid layout for images */
-    .image-grid {
+    /* Grid layout for admin mode */
+    .admin-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1rem;
-        padding: 1rem;
-        max-width: 1200px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        padding: 8px;
+        width: 100%;
+        max-width: 1400px;
         margin: 0 auto;
     }
 
-    /* In view mode, show one image per row */
-    .view-mode .image-grid {
-        grid-template-columns: 1fr;
-        max-width: 800px;
-    }
-
-    .image-container {
+    .admin-image-container {
+        position: relative;
         background: white;
-        border-radius: 10px;
-        padding: 1rem;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        aspect-ratio: 1;
-        display: flex;
-        flex-direction: column;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        overflow: hidden;
     }
 
-    .image-container img {
+    .admin-image-container img {
         width: 100%;
-        height: 100%;
+        aspect-ratio: 1;
         object-fit: cover;
-        border-radius: 5px;
-        flex: 1;
+        display: block;
     }
 
-    /* Control buttons container */
-    .control-buttons {
+    .admin-controls {
         display: flex;
-        gap: 0.5rem;
-        margin-top: 0.5rem;
-        justify-content: center;
+        gap: 4px;
+        padding: 4px;
+        background: rgba(255,255,255,0.9);
     }
 
-    .control-buttons button {
+    .admin-controls button {
         flex: 1;
-        padding: 0.5rem;
+        padding: 4px 8px;
         border: none;
-        border-radius: 5px;
+        border-radius: 4px;
         background: #2c3e50;
         color: white;
         cursor: pointer;
-        max-width: 60px;
+        font-size: 14px;
     }
 
-    .delete-button {
-        background: #e74c3c !important;
+    /* View mode layout - continuous images */
+    .view-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        width: 100%;
+        max-width: 800px;
+        margin: 0 auto;
     }
 
-    /* Hide Streamlit components */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
+    .view-image-container {
+        width: 100%;
+    }
 
-    /* Responsive adjustments */
+    .view-image-container img {
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+
+    @media (max-width: 1200px) {
+        .admin-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
     @media (max-width: 768px) {
-        .image-grid {
+        .admin-grid {
             grid-template-columns: repeat(2, 1fr);
-        }
-        
-        .view-mode .image-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .image-grid {
-            grid-template-columns: 1fr;
         }
     }
 </style>
@@ -248,38 +246,28 @@ if st.session_state.view_mode == 'edit':
     
     st.markdown("---")
 
-# Display images in grid
+# Display images based on mode
 st.session_state.images = load_images_from_album()
 if st.session_state.images:
-    # Add view-mode class if needed
-    grid_class = "image-grid" if st.session_state.view_mode == 'edit' else "image-grid view-mode"
-    
-    # Start grid container
-    st.markdown(f'<div class="{grid_class}">', unsafe_allow_html=True)
-    
-    for img_path in st.session_state.images:
-        try:
-            current_rotation = st.session_state.image_rotations.get(img_path, 0)
-            image = Image.open(img_path)
-            if current_rotation:
-                image = image.rotate(-current_rotation, expand=True)
-            
-            # Calculate dimensions
-            if st.session_state.view_mode == 'edit':
-                # In edit mode, resize to thumbnail
+    if st.session_state.view_mode == 'edit':
+        # Admin mode - grid layout
+        st.markdown('<div class="admin-grid">', unsafe_allow_html=True)
+        
+        for img_path in st.session_state.images:
+            try:
+                current_rotation = st.session_state.image_rotations.get(img_path, 0)
+                image = Image.open(img_path)
+                if current_rotation:
+                    image = image.rotate(-current_rotation, expand=True)
+                
+                # Resize for admin view
                 image.thumbnail((300, 300))
-            else:
-                # In view mode, maintain larger size
-                image.thumbnail((800, 800))
-            
-            # Create container for each image
-            st.markdown(f'<div class="image-container">', unsafe_allow_html=True)
-            
-            # Display image
-            st.image(image)
-            
-            # Show controls in edit mode
-            if st.session_state.view_mode == 'edit':
+                
+                # Create container for each image
+                st.markdown('<div class="admin-image-container">', unsafe_allow_html=True)
+                st.image(image)
+                
+                # Admin controls
                 col1, col2, col3 = st.columns(3)
                 with col1:
                     if st.button("↺", key=f"left_{img_path}"):
@@ -295,15 +283,38 @@ if st.session_state.images:
                     if st.button("🗑️", key=f"delete_{img_path}", type="primary"):
                         if delete_image(img_path):
                             st.rerun()
-            
-            st.markdown('</div>', unsafe_allow_html=True)
-            
-        except Exception as e:
-            st.error(f"שגיאה בטעינת התמונה: {str(e)}")
-    
-    # End grid container
-    st.markdown('</div>', unsafe_allow_html=True)
-    
+                
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+            except Exception as e:
+                st.error(f"שגיאה בטעינת התמונה: {str(e)}")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+    else:
+        # View mode - continuous layout
+        st.markdown('<div class="view-grid">', unsafe_allow_html=True)
+        
+        for img_path in st.session_state.images:
+            try:
+                current_rotation = st.session_state.image_rotations.get(img_path, 0)
+                image = Image.open(img_path)
+                if current_rotation:
+                    image = image.rotate(-current_rotation, expand=True)
+                
+                # Resize for view mode
+                image.thumbnail((800, 800))
+                
+                # Display image
+                st.markdown('<div class="view-image-container">', unsafe_allow_html=True)
+                st.image(image)
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+            except Exception as e:
+                st.error(f"שגיאה בטעינת התמונה: {str(e)}")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+
     # Delete album button at the bottom of edit mode
     if st.session_state.view_mode == 'edit':
         st.markdown("---")
