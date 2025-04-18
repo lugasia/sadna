@@ -49,14 +49,34 @@ st.markdown("""
         margin-top: 4rem;
     }
 
+    /* Additional screenshot prevention */
+    body {
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+        -webkit-touch-callout: none !important;
+        -webkit-text-size-adjust: none !important;
+    }
+
+    /* Prevent screenshot on iOS */
+    img {
+        -webkit-user-select: none !important;
+        -webkit-touch-callout: none !important;
+        pointer-events: none !important;
+        user-select: none !important;
+        -webkit-user-drag: none !important;
+        filter: blur(0.000001px) !important;
+    }
+
     /* Grid layout for admin mode */
     .admin-grid {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(3, 1fr);
         gap: 8px;
         padding: 8px;
         width: 100%;
-        max-width: 1400px;
+        max-width: 1200px;
         margin: 0 auto;
     }
 
@@ -105,18 +125,29 @@ st.markdown("""
 
     .view-image-container {
         width: 100%;
+        position: relative;
+    }
+
+    .view-image-container::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        background: linear-gradient(45deg, rgba(255,255,255,0.1) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.1) 75%);
+        background-size: 2px 2px;
     }
 
     .view-image-container img {
         width: 100%;
         height: auto;
         display: block;
-    }
-
-    @media (max-width: 1200px) {
-        .admin-grid {
-            grid-template-columns: repeat(3, 1fr);
-        }
+        transform: translate3d(0,0,0);
+        backface-visibility: hidden;
+        perspective: 1000px;
+        filter: blur(0.000001px);
     }
 
     @media (max-width: 768px) {
@@ -124,7 +155,20 @@ st.markdown("""
             grid-template-columns: repeat(2, 1fr);
         }
     }
+
+    @media (max-width: 480px) {
+        .admin-grid {
+            grid-template-columns: repeat(1, 1fr);
+        }
+    }
 </style>
+""", unsafe_allow_html=True)
+
+# Add meta tags for iOS screenshot prevention
+st.markdown("""
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 """, unsafe_allow_html=True)
 
 # Initialize session state
