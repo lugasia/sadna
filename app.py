@@ -23,32 +23,70 @@ st.set_page_config(
 # Custom CSS for mobile-friendly view
 st.markdown("""
 <style>
-    /* Prevent screen capture */
-    * {
-        -webkit-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
-        -webkit-touch-callout: none;
+    /* Prevent screen capture and strengthen protection */
+    body {
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+        -webkit-touch-callout: none !important;
+        -webkit-text-size-adjust: none !important;
     }
     
-    .stImage > img {
-        -webkit-user-drag: none;
-        -khtml-user-drag: none;
-        -moz-user-drag: none;
-        -o-user-drag: none;
-        user-drag: none;
-        pointer-events: none;
+    img {
+        -webkit-user-drag: none !important;
+        -khtml-user-drag: none !important;
+        -moz-user-drag: none !important;
+        -o-user-drag: none !important;
+        user-drag: none !important;
+        pointer-events: none !important;
+        -webkit-touch-callout: none !important;
+        -webkit-user-select: none !important;
     }
     
-    /* Mobile-friendly container */
+    /* Title styling - fixed and always visible */
+    .sticky-header {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 9999 !important;
+        background-color: rgba(255, 255, 255, 0.95) !important;
+        backdrop-filter: blur(5px) !important;
+        -webkit-backdrop-filter: blur(5px) !important;
+        padding: 1rem !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        text-align: center !important;
+        height: auto !important;
+        min-height: 60px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    .sticky-header h1 {
+        margin: 0 !important;
+        padding: 0 !important;
+        font-size: 24px !important;
+        color: #2c3e50 !important;
+        font-weight: bold !important;
+        font-family: Arial, sans-serif !important;
+    }
+    
+    /* Spacer to prevent content from hiding under header */
+    .header-spacer {
+        height: 80px !important;
+        width: 100% !important;
+        display: block !important;
+    }
+    
+    /* Rest of your existing styles... */
     .mobile-container {
         max-width: 100%;
         padding: 10px;
         margin: 0 auto;
     }
     
-    /* Image styling */
     .stImage {
         margin: 30px 0;
         transition: all 0.3s ease;
@@ -59,31 +97,6 @@ st.markdown("""
         border-radius: 15px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         transition: transform 0.3s ease;
-        -webkit-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
-    }
-    
-    /* Title styling */
-    .sticky-header {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        background: white;
-        padding: 10px;
-        z-index: 1000;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        text-align: center;
-        -webkit-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
-    }
-    
-    .header-spacer {
-        height: 80px;
     }
     
     /* Button styling */
@@ -99,10 +112,6 @@ st.markdown("""
         box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         margin: 5px;
         width: 100%;
-        -webkit-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
     }
     
     .delete-button {
@@ -120,8 +129,8 @@ st.markdown("""
     }
     
     /* Hide Streamlit branding */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
+    #MainMenu {visibility: hidden !important;}
+    footer {visibility: hidden !important;}
     
     /* Edit mode controls */
     .edit-controls {
@@ -138,20 +147,28 @@ st.markdown("""
         padding: 10px;
         border-radius: 15px;
         background: white;
-        -webkit-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
+    }
+    
+    /* Additional screen capture prevention */
+    ::selection {
+        background: transparent !important;
+    }
+    ::-moz-selection {
+        background: transparent !important;
     }
     
     /* Responsive design */
     @media (max-width: 768px) {
-        .mobile-container {
-            padding: 5px;
+        .sticky-header {
+            min-height: 50px !important;
         }
         
         .sticky-header h1 {
-            font-size: 1.5em;
+            font-size: 20px !important;
+        }
+        
+        .header-spacer {
+            height: 60px !important;
         }
         
         .stButton button {
@@ -160,12 +177,16 @@ st.markdown("""
         }
         
         .stImage {
-            margin: 20px 0;
+            margin: 15px 0;
         }
-        
-        .header-spacer {
-            height: 60px;
-        }
+    }
+    
+    /* Prevent text selection globally */
+    * {
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -241,9 +262,20 @@ def delete_image(img_path):
 # Load saved rotation data
 st.session_state.image_rotations = load_rotation_data()
 
-# Sticky header
-st.markdown('<div class="sticky-header"><h1>סדנת יצירה 2025</h1></div>', unsafe_allow_html=True)
-st.markdown('<div class="header-spacer"></div>', unsafe_allow_html=True)
+# Add meta tags to prevent screen capture
+st.markdown("""
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+""", unsafe_allow_html=True)
+
+# Sticky header with improved styling
+st.markdown('''
+    <div class="sticky-header">
+        <h1>סדנת יצירה 2025</h1>
+    </div>
+    <div class="header-spacer"></div>
+''', unsafe_allow_html=True)
 
 # Show admin controls at the top if in edit mode
 if st.session_state.view_mode == 'edit':
@@ -301,12 +333,18 @@ if st.session_state.images:
                 if current_rotation:
                     image = image.rotate(-current_rotation, expand=True)
                 
-                # Calculate image dimensions for mobile
+                # Calculate image dimensions
                 img_width, img_height = image.size
                 aspect_ratio = img_height / img_width
                 
-                # Adjust image size for mobile viewing
-                display_width = min(800, img_width)
+                # Adjust image size based on view mode
+                if st.session_state.view_mode == 'edit':
+                    # In edit mode, display at 20% of original size
+                    display_width = int(img_width * 0.2)
+                else:
+                    # In view mode, maintain the current max width of 800px
+                    display_width = min(800, img_width)
+                
                 display_height = int(display_width * aspect_ratio)
                 
                 # Resize image while maintaining aspect ratio
