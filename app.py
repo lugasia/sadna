@@ -42,11 +42,15 @@ st.markdown("""
         font-size: 24px;
         font-weight: bold;
         color: #2c3e50;
+        margin-bottom: 0 !important;
+        border-bottom: none !important;
     }
 
     /* Spacer for fixed header */
     .header-spacer {
-        margin-top: 4rem;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: 60px !important;
     }
 
     /* Additional screenshot prevention */
@@ -121,7 +125,43 @@ st.markdown("""
         width: 100%;
         max-width: 800px;
         margin: 0 auto;
+        padding: 0;
         background: white;
+        line-height: 0;
+    }
+
+    /* Remove ALL possible spacing from Streamlit elements */
+    .view-grid > div {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .view-grid div[data-testid="stVerticalBlock"] {
+        gap: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .view-grid div[class*="stVerticalBlock"] {
+        gap: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .view-grid .element-container {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .view-grid .stImage {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .view-grid .stImage > img {
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
     }
 
     .view-image-container {
@@ -130,6 +170,7 @@ st.markdown("""
         margin: 0;
         padding: 0;
         line-height: 0;
+        font-size: 0;
     }
 
     .view-image-container img {
@@ -142,20 +183,24 @@ st.markdown("""
         backface-visibility: hidden;
     }
 
-    /* Remove any potential spacing from Streamlit elements in view mode */
-    .view-grid .element-container {
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-
-    .view-grid .stImage {
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-
-    /* Remove the gradient overlay we added earlier */
-    .view-image-container::after {
+    /* Override any Streamlit default styles */
+    .stApp [data-testid="stToolbar"] {
         display: none;
+    }
+
+    .stApp [data-testid="stDecoration"] {
+        display: none;
+    }
+
+    .stApp [data-testid="stHeader"] {
+        display: none;
+    }
+
+    /* Force remove any whitespace */
+    .stApp {
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
     }
 
     @media (max-width: 768px) {
@@ -190,6 +235,8 @@ if 'image_rotations' not in st.session_state:
     st.session_state.image_rotations = {}
 if 'view_mode' not in st.session_state:
     st.session_state.view_mode = 'edit'
+if 'image_order' not in st.session_state:
+    st.session_state.image_order = {}
 
 # Get album_id from URL parameters
 params = st.query_params
@@ -203,6 +250,9 @@ os.makedirs(st.session_state.upload_dir, exist_ok=True)
 # Path for storing rotation data
 rotation_file = os.path.join(st.session_state.upload_dir, 'rotations.json')
 
+# Path for storing order data
+order_file = os.path.join(st.session_state.upload_dir, 'image_order.json')
+
 def load_rotation_data():
     if os.path.exists(rotation_file):
         with open(rotation_file, 'r') as f:
@@ -213,18 +263,52 @@ def save_rotation_data():
     with open(rotation_file, 'w') as f:
         json.dump(st.session_state.image_rotations, f)
 
+def load_order_data():
+    if os.path.exists(order_file):
+        with open(order_file, 'r') as f:
+            return json.load(f)
+    return {}
+
+def save_order_data():
+    with open(order_file, 'w') as f:
+        json.dump(st.session_state.image_order, f)
+
 def save_uploaded_file(uploaded_file):
     file_path = os.path.join(st.session_state.upload_dir, uploaded_file.name)
     with open(file_path, "wb") as f:
         f.write(uploaded_file.getbuffer())
     return file_path
 
+def move_image_up(img_path):
+    images = st.session_state.images
+    idx = images.index(img_path)
+    if idx > 0:
+        images[idx], images[idx-1] = images[idx-1], images[idx]
+        # Update order data
+        for i, img in enumerate(images):
+            st.session_state.image_order[img] = i
+        save_order_data()
+
+def move_image_down(img_path):
+    images = st.session_state.images
+    idx = images.index(img_path)
+    if idx < len(images) - 1:
+        images[idx], images[idx+1] = images[idx+1], images[idx]
+        # Update order data
+        for i, img in enumerate(images):
+            st.session_state.image_order[img] = i
+        save_order_data()
+
 def load_images_from_album():
     image_files = []
     for file in os.listdir(st.session_state.upload_dir):
         if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.heic')):
             image_files.append(os.path.join(st.session_state.upload_dir, file))
-    return sorted(image_files)
+    
+    # Load order data
+    order_data = load_order_data()
+    # Sort images based on saved order
+    return sorted(image_files, key=lambda x: order_data.get(x, float('inf')))
 
 def get_share_url():
     base_url = "https://lgvqgdba26dczmfvmh9qmd.streamlit.app"
@@ -320,7 +404,7 @@ if st.session_state.images:
                 st.image(image)
                 
                 # Admin controls
-                col1, col2, col3 = st.columns(3)
+                col1, col2, col3, col4, col5 = st.columns(5)
                 with col1:
                     if st.button("↺", key=f"left_{img_path}"):
                         st.session_state.image_rotations[img_path] = (current_rotation - 90) % 360
@@ -332,6 +416,14 @@ if st.session_state.images:
                         save_rotation_data()
                         st.rerun()
                 with col3:
+                    if st.button("⬆️", key=f"up_{img_path}"):
+                        move_image_up(img_path)
+                        st.rerun()
+                with col4:
+                    if st.button("⬇️", key=f"down_{img_path}"):
+                        move_image_down(img_path)
+                        st.rerun()
+                with col5:
                     if st.button("🗑️", key=f"delete_{img_path}", type="primary"):
                         if delete_image(img_path):
                             st.rerun()
