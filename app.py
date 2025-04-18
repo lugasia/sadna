@@ -52,9 +52,17 @@ st.markdown("""
     /* Grid layout for images */
     .image-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        grid-template-columns: repeat(3, 1fr);
         gap: 1rem;
         padding: 1rem;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    /* In view mode, show one image per row */
+    .view-mode .image-grid {
+        grid-template-columns: 1fr;
+        max-width: 800px;
     }
 
     .image-container {
@@ -62,12 +70,17 @@ st.markdown("""
         border-radius: 10px;
         padding: 1rem;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        aspect-ratio: 1;
+        display: flex;
+        flex-direction: column;
     }
 
     .image-container img {
         width: 100%;
-        height: auto;
+        height: 100%;
+        object-fit: cover;
         border-radius: 5px;
+        flex: 1;
     }
 
     /* Control buttons container */
@@ -75,6 +88,7 @@ st.markdown("""
         display: flex;
         gap: 0.5rem;
         margin-top: 0.5rem;
+        justify-content: center;
     }
 
     .control-buttons button {
@@ -85,6 +99,7 @@ st.markdown("""
         background: #2c3e50;
         color: white;
         cursor: pointer;
+        max-width: 60px;
     }
 
     .delete-button {
@@ -98,7 +113,17 @@ st.markdown("""
     /* Responsive adjustments */
     @media (max-width: 768px) {
         .image-grid {
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .view-mode .image-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .image-grid {
+            grid-template-columns: 1fr;
         }
     }
 </style>
@@ -226,8 +251,11 @@ if st.session_state.view_mode == 'edit':
 # Display images in grid
 st.session_state.images = load_images_from_album()
 if st.session_state.images:
+    # Add view-mode class if needed
+    grid_class = "image-grid" if st.session_state.view_mode == 'edit' else "image-grid view-mode"
+    
     # Start grid container
-    st.markdown('<div class="image-grid">', unsafe_allow_html=True)
+    st.markdown(f'<div class="{grid_class}">', unsafe_allow_html=True)
     
     for img_path in st.session_state.images:
         try:
